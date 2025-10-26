@@ -1,0 +1,194 @@
+import React, { useState } from "react";
+
+// Dummy product data
+const productsData = [
+  { id: 1, name: "T-shirt", price: 20 },
+  { id: 2, name: "Jeans", price: 40 },
+  { id: 3, name: "Sneakers", price: 60 },
+  { id: 4, name: "Checked Shirt", price: 90 }
+];
+
+function App() {
+  const [cart, setCart] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [user, setUser] = useState(null);
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+
+  // ---------------- USERS ----------------
+  const register = () => {
+    if (!form.name || !form.email || !form.password) return alert("Fill all fields");
+    setUser({ name: form.name, email: form.email });
+    alert("Registered & logged in!");
+  };
+
+  const login = () => {
+    if (!form.email || !form.password) return alert("Enter credentials");
+    setUser({ name: "Demo User", email: form.email });
+    alert("Logged in!");
+  };
+
+  const logout = () => setUser(null);
+
+  // ---------------- CART ----------------
+  const addToCart = (product) => {
+    const exist = cart.find((item) => item.id === product.id);
+    if (exist) {
+      setCart(
+        cart.map((item) =>
+          item.id === product.id ? { ...exist, qty: exist.qty + 1 } : item
+        )
+      );
+    } else {
+      setCart([...cart, { ...product, qty: 1 }]);
+    }
+  };
+
+  const removeFromCart = (product) => {
+    setCart(cart.filter((item) => item.id !== product.id));
+  };
+
+  const updateQty = (product, qty) => {
+    if (qty < 1) return;
+    setCart(
+      cart.map((item) =>
+        item.id === product.id ? { ...item, qty: qty } : item
+      )
+    );
+  };
+
+  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  // ---------------- CHECKOUT ----------------
+  const checkout = () => {
+    if (!user) return alert("Login first!");
+    if (cart.length === 0) return alert("Cart is empty!");
+
+    const orderId = Date.now();
+    const newOrder = { id: orderId, items: cart, total: totalPrice, status: "Paid" };
+
+    setOrders([...orders, newOrder]);
+    setCart([]);
+    alert(`Checkout complete! Order ID: ${orderId}`);
+  };
+
+  return (
+    <div style={{ maxWidth: "900px", margin: "auto", fontFamily: "Arial" }}>
+      <h1>React E-Commerce Cart (Phase 1 + Phase 2)</h1>
+
+      {/* USER AUTH */}
+      <div style={{ marginBottom: "20px", padding: "10px", border: "1px solid #ddd" }}>
+        {user ? (
+          <div>
+            <p>Welcome, <b>{user.name}</b> ({user.email})</p>
+            <button onClick={logout}>Logout</button>
+          </div>
+        ) : (
+          <div>
+            <h3>Register / Login</h3>
+            <input
+              placeholder="Name"
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+            <input
+              placeholder="Email"
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+            <input
+              placeholder="Password"
+              type="password"
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
+            <div style={{ marginTop: "5px" }}>
+              <button onClick={register}>Register</button>
+              <button onClick={login}>Login</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* PRODUCTS */}
+      <h2>Products</h2>
+      <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+        {productsData.map((product) => (
+          <div
+            key={product.id}
+            style={{
+              border: "1px solid #ddd",
+              padding: "10px",
+              width: "150px",
+              borderRadius: "5px",
+            }}
+          >
+            <h3>{product.name}</h3>
+            <p>${product.price.toFixed(2)}</p>
+            <button onClick={() => addToCart(product)}>Add to Cart</button>
+          </div>
+        ))}
+      </div>
+
+      {/* CART */}
+      <h2>Your Cart</h2>
+      {cart.length === 0 ? (
+        <p>Cart is empty.</p>
+      ) : (
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #ccc" }}>
+              <th align="left">Product</th>
+              <th>Price</th>
+              <th>Qty</th>
+              <th>Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {cart.map((item) => (
+              <tr key={item.id} style={{ borderBottom: "1px solid #eee" }}>
+                <td>{item.name}</td>
+                <td align="center">${item.price.toFixed(2)}</td>
+                <td align="center">
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.qty}
+                    onChange={(e) => updateQty(item, parseInt(e.target.value))}
+                    style={{ width: "50px", textAlign: "center" }}
+                  />
+                </td>
+                <td align="center">${(item.price * item.qty).toFixed(2)}</td>
+                <td align="center">
+                  <button onClick={() => removeFromCart(item)}>Remove</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colSpan="3" align="right" style={{ fontWeight: "bold" }}>
+                Total:
+              </td>
+              <td align="center" style={{ fontWeight: "bold" }}>
+                ${totalPrice.toFixed(2)}
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      )}
+
+      {cart.length > 0 && (
+        <button onClick={checkout} style={{ marginTop: "10px" }}>
+          Checkout
+        </button>
+      )}
+
+      {/* ORDER HISTORY */}
+      <h2>Order History</h2>
+      {orders.length === 0 ? (
+        <p>No past orders.</p>
+      ) : (
+        orders.map((order) => (
+          <div key={order.id} style={{ border: "1px solid #ddd", padding: "10px", margin: "10px 0" }}>
+            <p><b>Order ID:</b> {order.id}</p>
+            <p><b>Status:</b> {order.status}</p>
+            <p><b>Total:</b> ${order.total.toFixed(2)}</
